@@ -1,0 +1,2 @@
+
+-DCATKIN_DEVEL_PREFIX=/home/ryung/Desktop/ros1_ws/devel -DCMAKE_INSTALL_PREFIX=/home/ryung/Desktop/ros1_ws/install -G Unix Makefiles
