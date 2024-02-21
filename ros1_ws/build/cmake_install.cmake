@@ -131,6 +131,9 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/ryung/Desktop/ros1_ws/build/gtest/cmake_install.cmake")
+  include("/home/ryung/Desktop/ros1_ws/build/Dynamixel/dynamixel-workbench-msgs/dynamixel_workbench_msgs/cmake_install.cmake")
+  include("/home/ryung/Desktop/ros1_ws/build/Dynamixel/DynamixelSDK/ros/dynamixel_sdk/cmake_install.cmake")
+  include("/home/ryung/Desktop/ros1_ws/build/Dynamixel/DynamixelSDK/ros/dynamixel_sdk_examples/cmake_install.cmake")
 
 endif()
 
