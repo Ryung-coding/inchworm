@@ -3,57 +3,93 @@
 //3. rosrun rosserial_python serial_node.py _port:=/dev/ttyUSB0 _baud:=57600
 //4. rostopic echo /angle_deg
 
-//Encoder pin map
+//Encoder1 pin map
 //pin 4  VCC  (line black )-> vcc(5V)
 //pin 6  GND  (line white )-> Gnd
-//pin 8  A+   (line gray  )-> A_plus pin
-//pin 9  B+   (line purple)-> B_plus pin
+//pin 8  A+   (line gray  )-> A_plus1 pin
+//pin 9  B+   (line purple)-> B_plus1 pin
+//pin 10 A-   (line blue  )-> Gnd
+//pin 11 B-   (line green )-> Gnd
+
+//Encoder2 pin map
+//pin 4  VCC  (line black )-> vcc(5V)
+//pin 6  GND  (line white )-> Gnd
+//pin 8  A+   (line gray  )-> A_plus2 pin
+//pin 9  B+   (line purple)-> B_plus2 pin
 //pin 10 A-   (line blue  )-> Gnd
 //pin 11 B-   (line green )-> Gnd
 
 #include <ros.h>
-#include <std_msgs/Float64.h>
+#include <sensor_msgs/JointState.h>
 
 ros::NodeHandle nh;
-std_msgs::Float64 angle_deg;
+sensor_msgs::JointState angle_deg;
 ros::Publisher p("angle_deg", &angle_deg);
 
-#define A_plus 3  
-#define B_plus 2 
-#define gear_ratio 3.076923077 // 40(big_gear) / 13(small_gear) 
+#define A_plus1 3  
+#define B_plus1 2 
+#define A_plus2 5  
+#define B_plus2 4 
+#define gear_ratio 1 // 40(big_gear) / 13(small_gear) 
 #define counter_to_deg 0.703125 // 360(deg) / 512(PPR)
 
-int counter = 0; int counter_past = 0;        
-int state_rotation; int state_rotation_past;  
-  
-float angle = 0.0;
+int counter1 = 0; int counter_past1 = 0;        
+int state_rotation1; int state_rotation_past1;  
 
-void Read_encoder()
+int counter2 = 0; int counter_past2 = 0;        
+int state_rotation2; int state_rotation_past2;  
+  
+float angle1 = 0.0; float angle2 = 0.0;
+
+void Read_encoder1()
 {
-  state_rotation = digitalRead(A_plus);
-  if (state_rotation != state_rotation_past && state_rotation == 1) counter = digitalRead(B_plus) != state_rotation ? counter+1 : counter-1;
-  state_rotation_past = state_rotation; 
-  counter_past = counter;
+  state_rotation1 = digitalRead(A_plus1);
+  if (state_rotation1 != state_rotation_past1 && state_rotation1 == 1) counter1 = digitalRead(B_plus1) != state_rotation1 ? counter1+1 : counter1-1;
+  state_rotation_past1 = state_rotation1; 
+  counter_past1 = counter1;
+  angle1 = (counter1/gear_ratio)*counter_to_deg;
+
+}
+
+void Read_encoder2()
+{
+  state_rotation2= digitalRead(A_plus2);
+  if (state_rotation2 != state_rotation_past2 && state_rotation2 == 1) counter2 = digitalRead(B_plus2) != state_rotation2 ? counter2+1 : counter2-1;
+  state_rotation_past2 = state_rotation2; 
+  counter_past2 = counter2;
+  angle2 = (counter2/gear_ratio)*counter_to_deg;
+
 }
 
 
 void setup() 
 {
-  pinMode(A_plus, INPUT_PULLUP);
-  pinMode(B_plus, INPUT_PULLUP);
-  state_rotation_past = digitalRead(A_plus);
-
+  pinMode(A_plus1, INPUT_PULLUP);
+  pinMode(B_plus1, INPUT_PULLUP);
+  pinMode(A_plus2, INPUT_PULLUP);
+  pinMode(B_plus2, INPUT_PULLUP);
+  
+  state_rotation_past1 = digitalRead(A_plus1);
+  state_rotation_past2 = digitalRead(A_plus2);
+  
+  Serial.begin(2000000);
+  attachInterrupt(digitalPinToInterrupt(A_plus1), Read_encoder1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(A_plus2), Read_encoder2, CHANGE);
   nh.initNode();
   nh.advertise(p);
 }
 
 void loop() 
 {
-  Read_encoder();
-  angle = (counter/gear_ratio)*counter_to_deg;
+  angle_deg.header.frame_id = "Encoder";
+  angle_deg.name_length =2;
+  angle_deg.velocity_length = 1;
+  angle_deg.position_length = 2;
+  angle_deg.effort_length = 0;
+  char *Name[] = {"Encoder1", "Encoder2"};
 
-  angle_deg.data = angle;
+  angle_deg.name = Name;
+  angle_deg.velocity = 1;
   p.publish( &angle_deg );
   nh.spinOnce();
-  
 }
