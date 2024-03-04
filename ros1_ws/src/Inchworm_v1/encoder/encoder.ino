@@ -4,32 +4,35 @@
 //4. rostopic echo /angle_deg
 
 //Encoder1 pin map
-//pin 4  VCC  (line black )-> vcc(5V)
-//pin 6  GND  (line white )-> Gnd
-//pin 8  A+   (line gray  )-> A_plus1 pin
-//pin 9  B+   (line purple)-> B_plus1 pin
-//pin 10 A-   (line blue  )-> Gnd
-//pin 11 B-   (line green )-> Gnd
+//pin  4 GND  (line black )-> Gnd
+//pin  6 VCC  (line white )-> vcc(5V)
+//pin  8 B+   (line gray  )-> A_plus1 pin
+//pin  9 B-   (line purple)-> B_plus1 pin
+//pin 10 A+   (line blue  )-> Gnd
+//pin 11 A-   (line green )-> Gnd
+
 
 //Encoder2 pin map
-//pin 4  VCC  (line black )-> vcc(5V)
-//pin 6  GND  (line white )-> Gnd
-//pin 8  A+   (line gray  )-> A_plus2 pin
-//pin 9  B+   (line purple)-> B_plus2 pin
-//pin 10 A-   (line blue  )-> Gnd
-//pin 11 B-   (line green )-> Gnd
+//pin  4 GND  (line black )-> Gnd
+//pin  6 VCC  (line white )-> vcc(5V)
+//pin  8 B+   (line gray  )-> A_plus2 pin
+//pin  9 B-   (line purple)-> B_plus2 pin
+//pin 10 A+   (line blue  )-> Gnd
+//pin 11 A-   (line green )-> Gnd
 
 #include <ros.h>
-#include <sensor_msgs/JointState.h>
+#include <std_msgs/Float64.h>
 
 ros::NodeHandle nh;
-sensor_msgs::JointState angle_deg;
-ros::Publisher p("angle_deg", &angle_deg);
+std_msgs::Float64 angle1_deg;
+std_msgs::Float64 angle2_deg;
+ros::Publisher p1("angle1_deg", &angle1_deg);
+ros::Publisher p2("angle2_deg", &angle2_deg);
 
-#define A_plus1 3  
-#define B_plus1 2 
-#define A_plus2 5  
-#define B_plus2 4 
+#define A_plus1 20  
+#define B_plus1 21 
+#define A_plus2 2  
+#define B_plus2 3 
 #define gear_ratio 1 // 40(big_gear) / 13(small_gear) 
 #define counter_to_deg 0.703125 // 360(deg) / 512(PPR)
 
@@ -48,7 +51,6 @@ void Read_encoder1()
   state_rotation_past1 = state_rotation1; 
   counter_past1 = counter1;
   angle1 = (counter1/gear_ratio)*counter_to_deg;
-
 }
 
 void Read_encoder2()
@@ -58,7 +60,6 @@ void Read_encoder2()
   state_rotation_past2 = state_rotation2; 
   counter_past2 = counter2;
   angle2 = (counter2/gear_ratio)*counter_to_deg;
-
 }
 
 
@@ -76,20 +77,17 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(A_plus1), Read_encoder1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(A_plus2), Read_encoder2, CHANGE);
   nh.initNode();
-  nh.advertise(p);
+  nh.advertise(p1);
+  nh.advertise(p2);
 }
 
 void loop() 
 {
-  angle_deg.header.frame_id = "Encoder";
-  angle_deg.name_length =2;
-  angle_deg.velocity_length = 1;
-  angle_deg.position_length = 2;
-  angle_deg.effort_length = 0;
-  char *Name[] = {"Encoder1", "Encoder2"};
+  angle1_deg.data = angle1;
+  angle2_deg.data = angle2;
+  
+  p1.publish( &angle1_deg );
+  p2.publish( &angle2_deg );
 
-  angle_deg.name = Name;
-  angle_deg.velocity = 1;
-  p.publish( &angle_deg );
   nh.spinOnce();
 }
