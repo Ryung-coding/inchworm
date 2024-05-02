@@ -1,0 +1,8 @@
+prefix=/home/ryung/Desktop/ros1_ws/devel
+
+Name: inch_ws
+Description: Description of inch_ws
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
