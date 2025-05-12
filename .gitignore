@@ -1,0 +1,12 @@
+build/
+install/
+log/
+.colcon/
+
+**/cmake-build-debug/
+**/compile_commands.json
+
+.vscode/
+.idea/
+*.swp
+*.swo
