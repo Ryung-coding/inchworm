@@ -2,17 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Inchworm Robot</title>
 </head>
 <body>
   <h1>🐛 Inchworm Robot</h1>
   <p>ROS 2 기반 Inchworm 로봇 제어 시스템입니다. 키보드 입력을 통해 Manipulating 모드와 Locomotion 모드를 전환하며 조작할 수 있습니다. Dynamixel 모터 제어와 시리얼 기반 Arduino 그리퍼 동작이 통합되어 있으며, C++ 기반 제어 노드와 Python 기반 키보드 노드가 함께 실행됩니다.</p>
-
-  <h2>실행 방법</h2>
-  <p>ROS 2 워크스페이스에서 다음 명령어를 통해 빌드 후 실행할 수 있습니다:</p>
-  <pre><code>cd ~/Desktop/ros2_ws
-colcon build
-source install/setup.bash</code></pre>
 
   <p>Launch로 실행하는 경우:</p>
   <pre><code>ros2 launch inchworm robot_launch.py</code></pre>
