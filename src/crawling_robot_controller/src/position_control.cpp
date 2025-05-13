@@ -1,7 +1,5 @@
 #include "crawling_robot_controller/define.h"
 #include "crawling_robot_controller/dynamixel_funtion.h"
-#include "crawling_robot_controller/cmd_funtion.h"
-
 
 void keyboard_callback(const std_msgs::msg::Int8::SharedPtr msg)
 {
@@ -18,8 +16,8 @@ void IK_2dim(double x, double y)
     double theta1 = atan2(y, x) + asin(L * sin(-theta2) / sqrt(x * x + y * y));
     double theta3 = (theta1 + theta2);
 
-    base_ref_pos = M_PI + theta1 - M_PI / 2 ;
-    elbow_ref_pos = M_PI + theta2 ;
+    base_ref_pos = M_PI + theta1 - M_PI / 2;
+    elbow_ref_pos = M_PI + theta2;
     ee_ref_pos = M_PI + theta3 + M_PI / 2;
 }
 
@@ -45,22 +43,26 @@ void IK_2dim_b(double x, double y)
     ee_ref_pos = M_PI + theta3 + M_PI / 2 - FeedForward_theta3;
 }
 
-
 int main(int argc, char **argv)
 {
-    system(("sudo chmod 666 " + std::string(DEVICENAME)).c_str());
+    system(("sudo chmod 666 " + std::string(DEVICENAME_Dynamicxel)).c_str());
+    system(("sudo chmod 666 " + std::string(DEVICENAME_Arduino)).c_str());
 
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared("position_control");
     rclcpp::WallRate loop_rate(loop_hz);
     rclcpp::on_shutdown([]() { KILL_dynamixel(); });
 
-    
-    gripper_state_pub = node->create_publisher<std_msgs::msg::Int8MultiArray>("gripper_state", 10);
     auto keyboard_sub = node->create_subscription<std_msgs::msg::Int8>("keyboard", 10, keyboard_callback);
 
     CONNECT_dynamixel();
     SET_dynamixel();
+
+    arduino_serial.setPort(DEVICENAME_Arduino);
+    arduino_serial.setBaudrate(115200);
+    serial::Timeout to = serial::Timeout::simpleTimeout(1000);
+    arduino_serial.setTimeout(to);
+    arduino_serial.open();
 
     while (rclcpp::ok()) 
     {
@@ -75,19 +77,9 @@ int main(int argc, char **argv)
             BASE_position_control(base_ref_pos);
             ELBOW_position_control(elbow_ref_pos);
     
-            ee_ref_pos = ee_ref_pos > 1.58 * M_PI ? 1.58 * M_PI: ee_ref_pos+EE_Heanding_unit;
-            ee_ref_pos = ee_ref_pos < 0.42 * M_PI ? 0.42 * M_PI: ee_ref_pos+EE_Heanding_unit;
+            ee_ref_pos = ee_ref_pos > 1.58 * M_PI ? 1.58 * M_PI: ee_ref_pos + EE_Heanding_unit;
+            ee_ref_pos = ee_ref_pos < 0.42 * M_PI ? 0.42 * M_PI: ee_ref_pos + EE_Heanding_unit;
             EE_position_control(ee_ref_pos);
-
-            std_msgs::msg::Int8MultiArray gripper_state_msg;
-            gripper_state_msg.data.resize(1);
-
-            if (grip_mode) grip_command = 3;
-            else if (grip_mode_back) grip_command = 4;
-            else grip_command = 0;
-
-            gripper_state_msg.data[0] = grip_command;
-            gripper_state_pub->publish(gripper_state_msg);
         }
 
         if(localizing_forward) 
@@ -112,6 +104,7 @@ int main(int argc, char **argv)
         loop_rate.sleep();
     }
 
+    arduino_serial.close();
     KILL_dynamixel(); 
     return 0;
 }

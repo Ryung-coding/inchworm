@@ -9,7 +9,7 @@ dynamixel::GroupSyncRead *groupSyncRead;
 
 void CONNECT_dynamixel() 
 {
-    portHandler = dynamixel::PortHandler::getPortHandler(DEVICENAME);  
+    portHandler = dynamixel::PortHandler::getPortHandler(DEVICENAME_Dynamicxel);  
     portHandler->openPort();
     portHandler->setBaudRate(BAUDRATE);
 }

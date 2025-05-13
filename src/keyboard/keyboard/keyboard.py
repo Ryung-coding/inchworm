@@ -59,7 +59,6 @@ class KeyboardTeleop(Node):
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
 
 
-
 def main(args=None):
     rclpy.init(args=args)
     node = KeyboardTeleop()
