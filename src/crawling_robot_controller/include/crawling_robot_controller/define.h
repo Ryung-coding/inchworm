@@ -32,12 +32,12 @@
 // #define l 0.025 // [m] 
 #define L 0.130 // [m] 
 #define d 0.05 // [m]
-#define FeedForward_theta1 0.07
-#define FeedForward_theta2 0.02
-#define FeedForward_theta3 -0.03
+#define FeedForward_theta1 0.00 //0.07
+#define FeedForward_theta2 0.00 //0.02
+#define FeedForward_theta3 0.00 // 0.03
 // System values
-#define DEVICENAME_Dynamicxel "/dev/ttyUSB0"
-#define DEVICENAME_Arduino "/dev/ttyUSB1"
+#define DEVICENAME_Dynamicxel "/dev/ttyUSB1"
+#define DEVICENAME_Arduino "/dev/ttyUSB0"
 #define loop_hz 100
 
 
@@ -51,14 +51,19 @@
 // Common Dynamixel values
 #define PPR 4096
 #define PROTOCOL_VERSION 2.0
-#define ADDR_SHUTDOWN 63
+#define ADDR_SHUTDOWN     63
+#define OVERLOAD_BIT_MASK 0x10
 #define ADDR_TORQUE_ENABLE 64 
 #define ADDR_GOAL_POSITION 116  
 #define ADDR_PRESENT_POSITION 132  
 #define ADDR_OPERATING_MODE 11  
 #define TORQUE_ENABLE 1
 #define TORQUE_DISABLE 0
-
+#define ADDR_POSITION_P_GAIN   84    // Position P Gain 주소
+#define ADDR_POSITION_I_GAIN   82    // Position I Gain 주소
+#define ADDR_POSITION_D_GAIN   80    // Position D Gain 주소
+#define ADDR_VELOCITY_P_GAIN   78    // Velocity P Gain 주소
+#define ADDR_VELOCITY_I_GAIN   76    // Velocity I Gain 주소
 
 // control values
 dynamixel::PortHandler *portHandler;
@@ -70,13 +75,13 @@ std::vector<std::pair<double, double>> getPoints(double move_size)
     move_size = move_size > 0.02 ? 0.02 : move_size;
     move_size = move_size < 0.00 ? 0.00 : move_size;
     return {
-        {0.155, -0.015},
-        {0.155 + move_size / 2, 0.02},
-        {0.23 + move_size, 0.05},
-        {0.23 + move_size, 0.0},
-        {0.23 + move_size, -0.05},
-        {0.155 + move_size / 2, -0.02},
-        {0.155, -0.015}
+        {0.155, 0.00}, //-0.015 //0
+        {0.155 + move_size / 2, 0.02}, // 1
+        {0.23 + move_size, 0.03}, // 2
+        {0.23 + move_size, 0.00}, // 3
+        {0.23 + move_size, -0.03}, // 4
+        {0.155 + move_size / 2, -0.02}, // 5
+        {0.155, 0.00} // 6
     };
 }
 
@@ -248,8 +253,8 @@ void path()
 
             // Update state variables
             if(localizing_forward){
-                BASEisOpend = (target_index > 3);
-                EEisOpend = (target_index <= 3);
+                BASEisOpend = (target_index > 3 || target_index <1); //|| target_index < 1
+                EEisOpend = (target_index <= 3 && target_index>=1); //&& target_index >= 1
             }
             else if(localizing_backward){
                 BASEisOpend = target_index >= 3;
@@ -262,6 +267,21 @@ void path()
             arduino_serial.flush();
         }
     }
+}
+
+static inline void setGains(
+    uint8_t dxl_id,
+    uint16_t pos_p, uint16_t pos_i, uint16_t pos_d,
+    uint16_t vel_p, uint16_t vel_i
+) {
+    uint8_t dxl_error = 0;
+    // Position PID
+    packetHandler->write2ByteTxRx(portHandler, dxl_id, ADDR_POSITION_P_GAIN, pos_p, &dxl_error);
+    packetHandler->write2ByteTxRx(portHandler, dxl_id, ADDR_POSITION_I_GAIN, pos_i, &dxl_error);
+    packetHandler->write2ByteTxRx(portHandler, dxl_id, ADDR_POSITION_D_GAIN, pos_d, &dxl_error);
+    // Velocity PI
+    packetHandler->write2ByteTxRx(portHandler, dxl_id, ADDR_VELOCITY_P_GAIN, vel_p, &dxl_error);
+    packetHandler->write2ByteTxRx(portHandler, dxl_id, ADDR_VELOCITY_I_GAIN, vel_i, &dxl_error);
 }
 
 #endif // DEFINE

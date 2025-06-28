@@ -1,3 +1,4 @@
+
 #include "crawling_robot_controller/define.h"
 #include "crawling_robot_controller/dynamixel_funtion.h"
 
@@ -43,6 +44,23 @@ void IK_2dim_b(double x, double y)
     ee_ref_pos = M_PI + theta3 + M_PI / 2 - FeedForward_theta3;
 }
 
+void disableAllShutdown(const std::vector<int>& ids) {
+    uint8_t dummy_err;
+    int     comm;
+    for (int id : ids) {
+      comm = packetHandler->write1ByteTxRx(
+        portHandler, id,
+        ADDR_SHUTDOWN,
+        0x00,
+        &dummy_err);
+      if (comm != COMM_SUCCESS) {
+        RCLCPP_WARN(rclcpp::get_logger("position_control"),
+          "ID %d disableAllShutdown failed: %s",
+          id, packetHandler->getTxRxResult(comm));
+      }
+    }
+  }
+
 int main(int argc, char **argv)
 {
     system(("sudo chmod 666 " + std::string(DEVICENAME_Dynamicxel)).c_str());
@@ -57,6 +75,13 @@ int main(int argc, char **argv)
 
     CONNECT_dynamixel();
     SET_dynamixel();
+    
+    //disableAllShutdown({BASE_MOTOR, XC330_DXL_ID, EE_MOTOR});
+
+    setGains(BASE_MOTOR,   5000,  30,  1000,   100,  1920);//
+    setGains(XC330_DXL_ID, 5000, 1000,  5000,  50, 1600);//
+    setGains(EE_MOTOR, 5000, 30, 1000,  100, 1920);//
+
 
     arduino_serial.setPort(DEVICENAME_Arduino);
     arduino_serial.setBaudrate(115200);
